@@ -1,29 +1,51 @@
 name: CI/CD Pipeline
+
 on:
   push:
     branches:
       - main
+
 jobs:
-  build_and_deploy:
+  build:
     runs-on: ubuntu-latest
+    outputs:
+      zip-path: ${{ steps.zip.outputs.zip_path }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-      
-      - name: Install Dependencias
+
+      - name: Install Dependencies
         run: npm install
         working-directory: src
 
       - name: Zip Lambda
+        id: zip
         run: |
           cd src
           zip -r ../lambda.zip . -x "*.zip" "*.log" "*.github*" "test/*" "*.md" "npm-debug.log*"
-      
+          echo "zip_path=lambda.zip" >> $GITHUB_OUTPUT
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: lambda-zip
+          path: lambda.zip
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: lambda-zip
+          path: .
+
       - name: Deploy to AWS Lambda
         uses: appleboy/lambda-action@master
         with:
