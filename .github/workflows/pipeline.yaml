@@ -8,8 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    outputs:
-      zip-path: ${{ steps.zip.outputs.zip_path }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -24,14 +22,12 @@ jobs:
         working-directory: src
 
       - name: Zip Lambda
-        id: zip
         run: |
           cd src
           zip -r ../lambda.zip . -x "*.zip" "*.log" "*.github*" "test/*" "*.md" "npm-debug.log*"
-          echo "zip_path=lambda.zip" >> $GITHUB_OUTPUT
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: lambda-zip
           path: lambda.zip
@@ -41,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: lambda-zip
           path: .
